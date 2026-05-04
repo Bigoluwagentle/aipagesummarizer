@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Page Summarizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- MAIN VIEW -->
+  <div id="app" class="view" data-view="main">
+
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="1" y="1" width="8" height="8" rx="1.5" fill="currentColor" opacity="0.9"/>
+            <rect x="11" y="1" width="8" height="4" rx="1.5" fill="currentColor" opacity="0.5"/>
+            <rect x="11" y="7" width="8" height="2" rx="1" fill="currentColor" opacity="0.3"/>
+            <rect x="1" y="11" width="18" height="2" rx="1" fill="currentColor" opacity="0.6"/>
+            <rect x="1" y="15" width="14" height="2" rx="1" fill="currentColor" opacity="0.4"/>
+          </svg>
+        </div>
+        <span class="logo-text">Summ<em>AI</em></span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg id="themeIconDark" class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="themeIconLight" class="theme-icon hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-info" id="pageInfo">
+      <div class="page-favicon" id="pageFavicon" aria-hidden="true">🌐</div>
+      <div class="page-title" id="pageTitle">Loading page info…</div>
+    </div>
+
+    <div class="cta-zone" id="ctaZone">
+      <button class="btn-primary" id="summarizeBtn" aria-label="Summarize this page">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="21" y1="10" x2="3" y2="10"/>
+          <line x1="21" y1="6" x2="3" y2="6"/>
+          <line x1="21" y1="14" x2="3" y2="14"/>
+          <line x1="21" y1="18" x2="11" y2="18"/>
+        </svg>
+        Summarize Page
+      </button>
+    </div>
+
+    <div class="loading-zone hidden" id="loadingZone" aria-live="polite">
+      <div class="spinner" aria-hidden="true">
+        <div class="spinner-ring"></div>
+        <div class="spinner-core"></div>
+      </div>
+      <p class="loading-text" id="loadingText">Extracting content…</p>
+      <div class="loading-bar" aria-hidden="true">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+    </div>
+
+    <div class="error-zone hidden" id="errorZone" role="alert">
+      <div class="error-icon" aria-hidden="true">⚠️</div>
+      <p class="error-text" id="errorText">Something went wrong.</p>
+      <div class="error-actions">
+        <button class="btn-ghost" id="retryBtn">Try Again</button>
+        <button class="btn-ghost hidden" id="goToSettingsBtn">Add API Key</button>
+      </div>
+    </div>
+
+    <div class="results-zone hidden" id="resultsZone">
+      <div class="meta-bar">
+        <div class="meta-pill" title="Estimated reading time">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span id="readingTimeText">—</span>
+        </div>
+        <div class="meta-pill" title="Approximate word count">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/>
+          </svg>
+          <span id="wordCountText">—</span>
+        </div>
+        <div class="meta-pill sentiment-pill" id="sentimentPill" title="Content sentiment">
+          <span id="sentimentIcon">😐</span>
+          <span id="sentimentText">—</span>
+        </div>
+        <div class="meta-badge cache-badge hidden" id="cacheBadge" title="Loaded from cache">CACHED</div>
+      </div>
+
+      <div class="topics-row hidden" id="topicsRow">
+        <div class="topics-list" id="topicsList"></div>
+      </div>
+
+      <section class="summary-section" aria-labelledby="summaryHeading">
+        <h2 class="section-heading" id="summaryHeading">Summary</h2>
+        <ul class="summary-list" id="summaryList" role="list"></ul>
+      </section>
+
+      <section class="insights-section" aria-labelledby="insightsHeading">
+        <h2 class="section-heading" id="insightsHeading">Key Insights</h2>
+        <ol class="insights-list" id="insightsList" role="list"></ol>
+      </section>
+
+      <div class="action-bar">
+        <button class="btn-ghost btn-small" id="copyBtn" aria-label="Copy summary to clipboard">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy
+        </button>
+        <button class="btn-ghost btn-small" id="refreshBtn" aria-label="Re-summarize page">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Refresh
+        </button>
+        <button class="btn-ghost btn-small" id="clearBtn" aria-label="Clear summary and reset">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+          </svg>
+          Clear
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="settingsView" class="view hidden" data-view="settings">
+
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" id="backBtn" aria-label="Back to main view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <span class="logo-text">Settings</span>
+      </div>
+    </header>
+
+    <div class="settings-body">
+
+      <div class="settings-group">
+        <label class="settings-label" for="providerSelect">AI Provider</label>
+        <div class="select-wrapper"><select class="settings-select" id="providerSelect" aria-describedby="providerHint">
+          <option value="gemini">Google Gemini 2.5 Flash (Free)</option>
+          <option value="openai">OpenAI GPT-4o Mini</option>
+        </select></div>
+        <p class="settings-hint" id="providerHint">Gemini 2.5 Flash is free. OpenAI requires a paid account.</p>
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label" for="apiKeyInput">API Key</label>
+        <div class="api-key-field">
+          <input
+            class="settings-input"
+            type="password"
+            id="apiKeyInput"
+            placeholder="Paste your API key here…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="apiKeyHint"
+          />
+          <button class="icon-btn reveal-btn" id="revealKey" aria-label="Show/hide API key" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <p class="settings-hint" id="apiKeyHint">Stored locally on your device only. Never sent anywhere except the AI API.</p>
+        <div class="api-key-links">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="link-small" id="geminiLink">Get Gemini API Key →</a>
+          <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" class="link-small hidden" id="openaiLink">Get OpenAI API Key →</a>
+        </div>
+      </div>
+
+      <div class="key-status-bar" id="keyStatusBar">
+        <span id="keyStatusText">No API key saved yet.</span>
+      </div>
+
+      <button class="btn-primary settings-save-btn" id="saveSettingsBtn" type="button">
+        Save Settings
+      </button>
+
+      <p class="save-status" id="saveStatus" aria-live="polite"></p>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-group">
+        <label class="settings-label">Cache</label>
+        <p class="settings-hint">Summaries are cached for 30 minutes per page to save API calls.</p>
+        <button class="btn-ghost btn-small" id="clearAllCacheBtn" type="button">Clear All Cached Summaries</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
