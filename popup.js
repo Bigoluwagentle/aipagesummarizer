@@ -1,13 +1,7 @@
-/**
- * popup.js — Popup Controller
- * NO inline styles anywhere. All visibility toggled via .hidden class.
- * No API keys ever touch this file.
- */
 "use strict";
 
 const $ = (id) => document.getElementById(id);
 
-// Main view
 const pageTitle    = $("pageTitle");
 const pageFavicon  = $("pageFavicon");
 const ctaZone      = $("ctaZone");
@@ -18,7 +12,6 @@ const errorZone    = $("errorZone");
 const errorText    = $("errorText");
 const resultsZone  = $("resultsZone");
 
-// Results
 const readingTimeText = $("readingTimeText");
 const wordCountText   = $("wordCountText");
 const sentimentPill   = $("sentimentPill");
@@ -30,7 +23,6 @@ const topicsList      = $("topicsList");
 const summaryList     = $("summaryList");
 const insightsList    = $("insightsList");
 
-// Buttons — main
 const summarizeBtn    = $("summarizeBtn");
 const retryBtn        = $("retryBtn");
 const goToSettingsBtn = $("goToSettingsBtn");
@@ -42,7 +34,6 @@ const themeToggle     = $("themeToggle");
 const themeIconDark   = $("themeIconDark");
 const themeIconLight  = $("themeIconLight");
 
-// Settings
 const settingsView    = $("settingsView");
 const mainView        = $("app");
 const backBtn         = $("backBtn");
@@ -61,7 +52,6 @@ let currentState = "idle";
 let currentTab   = null;
 let lastSummary  = null;
 
-// ─── Init ─────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   await loadTheme();
   await loadCurrentTab();
@@ -69,7 +59,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindEvents();
 });
 
-// ─── Theme ────────────────────────────────────────────────────────
 async function loadTheme() {
   const result = await storageGet(["theme"]);
   applyTheme(result.theme || "dark");
@@ -77,7 +66,6 @@ async function loadTheme() {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  // Toggle icons using .hidden class — no inline style
   if (theme === "dark") {
     themeIconDark.classList.remove("hidden");
     themeIconLight.classList.add("hidden");
@@ -87,7 +75,6 @@ function applyTheme(theme) {
   }
 }
 
-// ─── Tab Info ─────────────────────────────────────────────────────
 async function loadCurrentTab() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -99,7 +86,7 @@ async function loadCurrentTab() {
         img.src    = tab.favIconUrl;
         img.width  = 18;
         img.height = 18;
-        img.className = "favicon-img"; // styled in CSS
+        img.className = "favicon-img"; 
         img.onerror = () => { pageFavicon.textContent = "🌐"; };
         pageFavicon.innerHTML = "";
         pageFavicon.appendChild(img);
@@ -110,7 +97,6 @@ async function loadCurrentTab() {
   }
 }
 
-// ─── Load saved settings into UI ──────────────────────────────────
 async function loadSettingsState() {
   const resp = await sendToBackground({ type: "GET_SETTINGS" });
   if (resp?.settings) {
@@ -124,7 +110,6 @@ async function loadSettingsState() {
   }
 }
 
-// ─── Events ───────────────────────────────────────────────────────
 function bindEvents() {
   summarizeBtn.addEventListener("click", () => runSummarize(false));
   retryBtn.addEventListener("click",     () => runSummarize(false));
@@ -144,7 +129,6 @@ function bindEvents() {
   });
 }
 
-// ─── Summarize Flow ───────────────────────────────────────────────
 async function runSummarize(refresh = false) {
   if (!currentTab) { showError("Cannot access the current tab."); return; }
 
@@ -193,15 +177,11 @@ async function runSummarize(refresh = false) {
   }
 }
 
-// ─── Loading Steps ─────────────────────────────────────────────────
 function setLoadingStep(step, text) {
   loadingText.textContent = text;
-  // width is set via JS property on the element's style — this is JS DOM,
-  // not an HTML inline style attribute, and is not blocked by CSP
   loadingBar.style.width = `${(step / 3) * 100}%`;
 }
 
-// ─── Render Results ────────────────────────────────────────────────
 function renderResults(summary, fromCache) {
   readingTimeText.textContent = summary.readingTime || "—";
   wordCountText.textContent   = summary.wordCount
@@ -232,7 +212,6 @@ function renderResults(summary, fromCache) {
     topicsRow.classList.add("hidden");
   }
 
-  // Build list items WITHOUT inline style — use CSS classes with nth-child animation
   summaryList.innerHTML = summary.summary
     .map(item => `<li>${item}</li>`).join("");
 
@@ -240,7 +219,6 @@ function renderResults(summary, fromCache) {
     .map(item => `<li>${item}</li>`).join("");
 }
 
-// ─── State Machine ─────────────────────────────────────────────────
 function setState(state) {
   currentState = state;
 
@@ -279,7 +257,6 @@ function clearResults() {
   setState("idle");
 }
 
-// ─── Copy ──────────────────────────────────────────────────────────
 async function copySummary() {
   if (!lastSummary) return;
   const title = currentTab?.title || "Page Summary";
@@ -301,13 +278,11 @@ async function copySummary() {
   }
 }
 
-// ─── Settings ──────────────────────────────────────────────────────
 async function showSettings() {
   mainView.classList.add("hidden");
   settingsView.classList.remove("hidden");
   apiKeyInput.value = "";
   apiKeyInput.placeholder = "Paste new key here (leave blank to keep current)";
-  // Refresh key status
   await loadSettingsState();
 }
 
@@ -321,7 +296,6 @@ async function saveSettings() {
   const provider = providerSelect.value;
 
   if (!apiKey) {
-    // Only save provider if no key entered
     const resp = await sendToBackground({ type: "SAVE_SETTINGS", payload: { apiProvider: provider } });
     showSaveStatus(resp?.success, "Provider saved!", resp?.error);
     return;
@@ -358,7 +332,6 @@ async function clearAllCache() {
   showToast("✓ Cache cleared");
 }
 
-// ─── Theme ──────────────────────────────────────────────────────────
 async function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme") || "dark";
   const next = current === "dark" ? "light" : "dark";
@@ -366,7 +339,6 @@ async function toggleTheme() {
   await sendToBackground({ type: "SAVE_SETTINGS", payload: { theme: next } });
 }
 
-// ─── Provider Links ─────────────────────────────────────────────────
 function updateProviderLinks(provider) {
   if (provider === "gemini") {
     geminiLink.classList.remove("hidden");
@@ -377,13 +349,11 @@ function updateProviderLinks(provider) {
   }
 }
 
-// ─── Reveal Key ─────────────────────────────────────────────────────
 function toggleRevealKey() {
   const isPassword = apiKeyInput.type === "password";
   apiKeyInput.type = isPassword ? "text" : "password";
 }
 
-// ─── Toast ──────────────────────────────────────────────────────────
 let toastTimer;
 function showToast(message) {
   toast.textContent = message;
@@ -392,7 +362,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
-// ─── Messaging ──────────────────────────────────────────────────────
 function sendToBackground(message) {
   return new Promise((resolve) => {
     try {

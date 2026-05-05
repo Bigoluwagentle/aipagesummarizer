@@ -6,7 +6,7 @@
 
 ## Demo Video
 
-🎥 **[Watch Demo on YouTube / Loom](https://YOUR_DEMO_VIDEO_LINK_HERE)**
+🎥 **[Watch Demo on YouTube / Loom](https://drive.google.com/file/d/1MxOliNUQQ9j7DPEwymiUs4iblZldudl-/view?usp=sharing)**
 
 > The demo video (2–5 minutes) covers:
 > - Loading the extension in Chrome via Developer Mode
@@ -48,7 +48,7 @@
 Clone or download this repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-page-summarizer.git
+git clone https://github.com/Bigoluwagentle/aipagesummarizer.git
 ```
 
 Or download the ZIP and unzip it.
@@ -250,13 +250,4 @@ MIT — built for HNGi14 Stage 4A Frontend track.
 
 ---
 
-## Submission Info (HNGi14 Stage 4A)
 
-| Field | Value |
-|---|---|
-| **Slack Display Name** | *(your unique Slack display name)* |
-| **GitHub Repo** | `https://github.com/YOUR_USERNAME/ai-page-summarizer` |
-| **Demo Video** | `https://YOUR_DEMO_VIDEO_LINK_HERE` |
-| **Deadline** | 5th May, 2026 |
-
-> Fill in your Slack display name, GitHub repo URL, and demo video link before submitting.

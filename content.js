@@ -1,13 +1,6 @@
-/**
- * content.js — Content Script
- * Extracts meaningful, readable content from the current page.
- * Runs in the page context but communicates only with the background worker.
- */
-
 (function () {
   "use strict";
 
-  // ─── Message Listener ─────────────────────────────────────────────────────────
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "EXTRACT_CONTENT") {
       try {
@@ -20,12 +13,10 @@
     }
   });
 
-  // ─── Main Extractor ───────────────────────────────────────────────────────────
   function extractPageContent() {
     const title = document.title || "Untitled Page";
     const url = window.location.href;
 
-    // Try to find main article content via heuristics
     const mainContent = findMainContent();
     const text = cleanText(mainContent);
     const wordCount = text.split(/\s+/).filter(Boolean).length;
@@ -39,17 +30,13 @@
     };
   }
 
-  // ─── Content Detection Heuristics ─────────────────────────────────────────────
   function findMainContent() {
-    // Priority 1: Semantic article element
     const article = document.querySelector("article");
     if (article && textLength(article) > 200) return article;
 
-    // Priority 2: main element
     const main = document.querySelector("main");
     if (main && textLength(main) > 200) return main;
 
-    // Priority 3: Common content selectors used by major sites
     const contentSelectors = [
       '[role="main"]',
       ".post-content",
@@ -78,17 +65,14 @@
       if (el && textLength(el) > 200) return el;
     }
 
-    // Priority 4: Score-based heuristic — find the div with most paragraph text
     return scoreBasedExtraction();
   }
 
-  // ─── Score-based Extraction ────────────────────────────────────────────────────
   function scoreBasedExtraction() {
     const candidates = [];
     const elements = document.querySelectorAll("div, section, td");
 
     elements.forEach((el) => {
-      // Skip known noise elements
       if (isNoise(el)) return;
 
       const paragraphs = el.querySelectorAll("p");
@@ -105,7 +89,6 @@
         }
       });
 
-      // Penalize for link density (nav/sidebar-heavy areas)
       const links = el.querySelectorAll("a");
       const linkText = Array.from(links).reduce((s, a) => s + a.textContent.length, 0);
       const totalText = el.textContent.length;
@@ -119,16 +102,13 @@
     });
 
     if (candidates.length === 0) {
-      // Fallback: return body but strip noise
       return document.body;
     }
 
-    // Sort by score descending
     candidates.sort((a, b) => b.score - a.score || b.charCount - a.charCount);
     return candidates[0].el;
   }
 
-  // ─── Noise Detector ───────────────────────────────────────────────────────────
   function isNoise(el) {
     const noiseSelectors = [
       "nav",
@@ -170,16 +150,13 @@
     return false;
   }
 
-  // ─── Text Utilities ───────────────────────────────────────────────────────────
   function textLength(el) {
     return el.textContent.trim().length;
   }
 
   function cleanText(el) {
-    // Clone to avoid mutating DOM
     const clone = el.cloneNode(true);
 
-    // Remove noise child elements from the clone
     const noiseTagsAndSelectors = [
       "script", "style", "noscript", "iframe", "svg",
       "nav", "header", "footer", "aside",
@@ -192,7 +169,6 @@
       clone.querySelectorAll(sel).forEach((n) => n.remove());
     });
 
-    // Extract text, preserving newlines for readability
     let text = "";
     const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null);
 
@@ -205,7 +181,6 @@
       const trimmed = node.textContent.trim();
       if (!trimmed) continue;
 
-      // Add paragraph/heading breaks
       if (["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote", "td", "th"].includes(tag)) {
         text += trimmed + "\n";
       } else {
@@ -213,7 +188,6 @@
       }
     }
 
-    // Normalize whitespace
     return text
       .replace(/[ \t]+/g, " ")
       .replace(/\n{3,}/g, "\n\n")

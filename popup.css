@@ -1,9 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════
-   AI Page Summarizer — Popup Styles
-   Font: Syne (display) + DM Sans (body)
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ─── CSS Variables ─────────────────────────────────────────────── */
 :root {
   --bg: #0e0f11;
   --bg-2: #161719;
@@ -49,7 +43,6 @@
   --shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
-/* ─── Reset & Base ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { font-size: 14px; -webkit-font-smoothing: antialiased; }
@@ -67,14 +60,11 @@ body {
   transition: background var(--transition), color var(--transition);
 }
 
-/* ─── Utility ───────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 
-/* ─── Views ─────────────────────────────────────────────────────── */
 .view { display: flex; flex-direction: column; }
 .view.hidden { display: none; }
 
-/* ─── Header ────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -123,10 +113,8 @@ body {
 .icon-btn:hover { background: var(--bg-3); color: var(--text); }
 .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* theme icons — JS adds/removes .hidden class */
 .theme-icon { display: block; }
 
-/* ─── Page Info ─────────────────────────────────────────────────── */
 .page-info {
   display: flex;
   align-items: center;
@@ -159,14 +147,12 @@ body {
   -webkit-box-orient: vertical;
 }
 
-/* ─── CTA Zone ──────────────────────────────────────────────────── */
 .cta-zone {
   padding: 16px 14px;
   display: flex;
   justify-content: center;
 }
 
-/* ─── Buttons ───────────────────────────────────────────────────── */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -213,7 +199,6 @@ body {
 
 .btn-small { padding: 5px 10px; font-size: 0.75rem; }
 
-/* ─── Loading ───────────────────────────────────────────────────── */
 .loading-zone {
   display: flex;
   flex-direction: column;
@@ -265,7 +250,6 @@ body {
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ─── Error Zone ────────────────────────────────────────────────── */
 .error-zone {
   display: flex;
   flex-direction: column;
@@ -279,7 +263,6 @@ body {
 .error-text { font-size: 0.82rem; color: var(--red); max-width: 300px; line-height: 1.4; }
 .error-actions { display: flex; gap: 8px; margin-top: 4px; }
 
-/* ─── Results Zone ──────────────────────────────────────────────── */
 .results-zone {
   display: flex;
   flex-direction: column;
@@ -292,7 +275,6 @@ body {
 .results-zone::-webkit-scrollbar-track { background: transparent; }
 .results-zone::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
-/* Meta Bar */
 .meta-bar {
   display: flex;
   align-items: center;
@@ -330,7 +312,6 @@ body {
   border: 1px solid rgba(96, 165, 250, 0.2);
 }
 
-/* Topics Row */
 .topics-row {
   padding: 7px 14px 0;
   display: flex;
@@ -351,7 +332,6 @@ body {
   text-transform: uppercase;
 }
 
-/* Sections */
 .summary-section, .insights-section {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
@@ -368,7 +348,6 @@ body {
   margin-bottom: 8px;
 }
 
-/* Summary List */
 .summary-list {
   list-style: none;
   display: flex;
@@ -394,7 +373,6 @@ body {
   border-radius: 50%;
 }
 
-/* Insights List */
 .insights-list {
   list-style: none;
   display: flex;
@@ -433,7 +411,6 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Action Bar */
 .action-bar {
   display: flex;
   gap: 6px;
@@ -444,7 +421,6 @@ body {
   bottom: 0;
 }
 
-/* ─── Settings ──────────────────────────────────────────────────── */
 .settings-body {
   padding: 14px;
   display: flex;
@@ -469,7 +445,6 @@ body {
 
 .settings-hint { font-size: 0.75rem; color: var(--text-3); line-height: 1.4; }
 
-/* Select — NO data URI, pure CSS arrow using border trick */
 .settings-select-wrapper {
   position: relative;
 }
@@ -490,7 +465,6 @@ body {
 }
 .settings-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 
-/* CSS-only dropdown arrow (no image, no data URI) */
 .select-wrapper {
   position: relative;
   display: block;
@@ -537,7 +511,6 @@ body {
 .link-small { font-size: 0.73rem; color: var(--accent); text-decoration: none; font-weight: 500; }
 .link-small:hover { text-decoration: underline; }
 
-/* Key status bar */
 .key-status-bar {
   padding: 7px 10px;
   background: var(--bg-3);
@@ -559,13 +532,11 @@ body {
 
 .settings-divider { height: 1px; background: var(--border-subtle); }
 
-/* Sentiment */
 .sentiment-pill[data-sentiment="positive"] { color: var(--accent-2); }
 .sentiment-pill[data-sentiment="negative"] { color: var(--red); }
 .sentiment-pill[data-sentiment="mixed"]    { color: var(--yellow); }
 .sentiment-pill[data-sentiment="neutral"]  { color: var(--text-3); }
 
-/* ─── Toast ─────────────────────────────────────────────────────── */
 .toast {
   position: fixed;
   bottom: 12px;
@@ -586,6 +557,5 @@ body {
 }
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-/* ─── Focus ─────────────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 :focus:not(:focus-visible) { outline: none; }

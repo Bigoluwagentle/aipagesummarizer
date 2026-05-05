@@ -1,5 +1,12 @@
-const CACHE_EXPIRY_MS = 30 * 60 * 1000; 
+/**
+ * background.js — Service Worker
+ * Handles all AI API communication securely.
+ * API keys are NEVER exposed to content scripts or popup JS.
+ */
 
+const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+
+// ─── Message Router ────────────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!isValidSender(sender)) {
     sendResponse({ error: "Unauthorized message sender." });
@@ -25,12 +32,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// ─── Sender Validation ─────────────────────────────────────────────────────────
 function isValidSender(sender) {
   if (sender.url && sender.url.startsWith(chrome.runtime.getURL(""))) return true;
   if (sender.tab) return true;
   return false;
 }
 
+// ─── Main Summarize Handler ────────────────────────────────────────────────────
 async function handleSummarize({ url, content, title }, sendResponse) {
   try {
     if (!url || !content) {
@@ -38,12 +47,14 @@ async function handleSummarize({ url, content, title }, sendResponse) {
       return;
     }
 
+    // 1. Check cache first
     const cached = await getCachedSummary(url);
     if (cached) {
       sendResponse({ success: true, summary: cached, fromCache: true });
       return;
     }
 
+    // 2. Get API key from storage
     const { apiKey, apiProvider } = await getStorageValues(["apiKey", "apiProvider"]);
     if (!apiKey) {
       sendResponse({
@@ -53,9 +64,11 @@ async function handleSummarize({ url, content, title }, sendResponse) {
       return;
     }
 
+    // 3. Call AI API (with retry on rate limit)
     const provider = apiProvider || "gemini";
     const summary = await callAIWithRetry(provider, apiKey, content, title);
 
+    // 4. Cache the result
     await cacheSummary(url, summary);
 
     sendResponse({ success: true, summary, fromCache: false });
@@ -65,66 +78,87 @@ async function handleSummarize({ url, content, title }, sendResponse) {
   }
 }
 
-async function callAIWithRetry(provider, apiKey, content, title) {
-  const truncated = content.slice(0, 2500);
-  const prompt = buildPrompt(title, truncated);
+// ─── Smart Content Cleaner ────────────────────────────────────────────────────
+function cleanContentForAI(rawContent) {
+  // Split into lines and filter aggressively
+  const lines = rawContent.split("\n");
+  const seen = new Set();
+  const kept = [];
 
-  const MAX_RETRIES = 3;
-  const WAIT_TIMES = [5000, 15000, 30000]; 
+  for (const line of lines) {
+    const trimmed = line.trim();
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    // Skip empty, very short, or duplicate lines
+    if (!trimmed || trimmed.length < 25) continue;
+    if (seen.has(trimmed)) continue;
+
+    // Skip lines that look like code, file paths, or GitHub noise
+    if (/^[{}\[\]();<>\/\\]/.test(trimmed)) continue;        // code symbols
+    if (/^\s*(import|export|const|let|var|function|class|\/\/)/.test(trimmed)) continue; // code keywords
+    if (/^[a-z0-9_\-\.\/]+\.(js|ts|jsx|tsx|css|md|json|py|go|rb)$/i.test(trimmed)) continue; // filenames
+    if (/^\d+$/.test(trimmed)) continue;                      // just numbers
+    if ((trimmed.match(/\|/g) || []).length > 3) continue;    // table rows with lots of pipes
+
+    seen.add(trimmed);
+    kept.push(trimmed);
+
+    // Stop once we have enough meaningful content
+    if (kept.join(" ").length > 1800) break;
+  }
+
+  return kept.join(" ").slice(0, 1800);
+}
+
+// ─── AI Caller with Retry ──────────────────────────────────────────────────────
+async function callAIWithRetry(provider, apiKey, rawContent, title) {
+  const cleaned = cleanContentForAI(rawContent);
+  const prompt = buildPrompt(title, cleaned);
+
+  // One retry after 10 seconds for transient errors
+  for (let attempt = 0; attempt <= 1; attempt++) {
     try {
-      if (provider === "gemini") {
-        return await callGemini(apiKey, prompt);
-      } else if (provider === "openai") {
-        return await callOpenAI(apiKey, prompt);
-      } else {
-        throw new Error(`Unsupported provider: ${provider}`);
-      }
+      if (provider === "gemini") return await callGemini(apiKey, prompt);
+      if (provider === "openai") return await callOpenAI(apiKey, prompt);
+      throw new Error("Unknown provider.");
     } catch (err) {
-      const is429 = err.message === "429" || (err.message && err.message.includes("429"));
-
-      if (is429 && attempt < MAX_RETRIES) {
-        const waitMs = WAIT_TIMES[attempt] || 30000;
-        console.log(`[AI Summarizer] Rate limited. Waiting ${waitMs/1000}s before retry ${attempt + 1}/${MAX_RETRIES}...`);
-        await sleep(waitMs);
-        continue;
-      }
-
-      if (is429) {
+      if (err.message === "QUOTA_EXCEEDED") {
+        if (attempt === 0) {
+          await sleep(10000); // wait 10s and try once more
+          continue;
+        }
+        // Still failing after retry — quota genuinely exhausted
         throw new Error(
-          "Rate limit reached on the free Gemini API. " +
-          "Please wait 60 seconds then try again. " +
-          "The free tier allows 15 requests per minute."
+          "Gemini API quota reached (250 requests/day on free tier). " +
+          "Quota resets at midnight Pacific Time. " +
+          "Note: creating a new key in the same project does NOT reset quota — " +
+          "quota is per project. To continue now, create a NEW PROJECT at " +
+          "console.cloud.google.com, generate an API key there, and paste it in Settings."
         );
       }
-
-      throw err;
+      throw err; // non-quota errors throw immediately, no retry
     }
   }
 }
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ─── Prompt Builder ────────────────────────────────────────────────────────────
 function buildPrompt(title, content) {
-  return `Summarize the following webpage. Return ONLY a raw JSON object — no markdown, no code fences, no explanation, no thinking text. Just the JSON.
+  return `Summarize this webpage content. Return ONLY a raw JSON object. No markdown, no code fences, no extra text.
 
 Title: ${title}
+Content: ${content}
 
-Content:
-${content}
+Required JSON:
+{"summary":["point 1","point 2","point 3","point 4"],"keyInsights":["insight 1","insight 2"],"readingTime":"2 min read","wordCount":400,"sentiment":"neutral","topics":["topic1","topic2"]}
 
-JSON format:
-{"summary":["point 1","point 2","point 3","point 4"],"keyInsights":["insight 1","insight 2","insight 3"],"readingTime":"3 min read","wordCount":500,"sentiment":"neutral","topics":["topic1","topic2"]}
-
-Rules: summary has 4-5 bullet points. keyInsights has 2-3 items. sentiment is one of: neutral, positive, negative, mixed. Output raw JSON only.`;
+Rules: 4-5 summary bullets, 2-3 insights, sentiment = neutral/positive/negative/mixed. Raw JSON only.`;
 }
 
+// ── Gemini API ─────────────────────────────────────────────────────────────────
 async function callGemini(apiKey, prompt) {
-  const model = "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   let response;
   try {
@@ -135,50 +169,40 @@ async function callGemini(apiKey, prompt) {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 2048,
-          thinkingConfig: { thinkingBudget: 0 },
+          maxOutputTokens: 8192,
         },
       }),
     });
   } catch (fetchErr) {
-    throw new Error("Network error: Could not reach Gemini API. Check your internet connection.");
+    throw new Error("Network error. Check your internet connection.");
   }
 
   if (!response.ok) {
     const errBody = await response.json().catch(() => ({}));
     const status = response.status;
     const apiMsg = errBody?.error?.message || "";
+    console.log(`[AI Summarizer] Gemini ${status}:`, apiMsg);
 
-    if (status === 400) throw new Error("Invalid API key or bad request. Check your Gemini API key in Settings.");
-    if (status === 401 || status === 403) throw new Error("API key rejected. Make sure your Gemini API key is correct and active.");
-    if (status === 429) throw new Error("429");
-    if (status === 503) throw new Error("429");
-    if (status === 404) throw new Error("Gemini model not found. Your API key may not have access yet.");
-    throw new Error(apiMsg || `Gemini API error (${status}). Please try again.`);
+    if (status === 401 || status === 403) throw new Error("API key rejected. Check your Gemini API key in Settings.");
+    if (status === 404) throw new Error("Gemini model not found. Make sure your API key is active at aistudio.google.com.");
+    if (status === 429 || status === 503) throw new Error("QUOTA_EXCEEDED");
+    throw new Error(apiMsg || `Gemini error (${status}). Please try again.`);
   }
 
   const data = await response.json();
-
-  let text = null;
   const parts = data?.candidates?.[0]?.content?.parts || [];
-  for (const part of parts) {
-    if (part.text && !part.thought) {
-      text = part.text;
-      break;
-    }
-  }
-
-  if (!text) text = parts.find(p => p.text)?.text;
+  const text = parts.find(p => p.text)?.text || null;
 
   if (!text) {
     const reason = data?.candidates?.[0]?.finishReason;
-    if (reason === "SAFETY") throw new Error("Content blocked by Gemini safety filter. Try a different page.");
-    throw new Error("Gemini returned an empty response. Please try again.");
+    if (reason === "SAFETY") throw new Error("Content blocked by safety filter. Try a different page.");
+    throw new Error("Empty response from Gemini. Please try again.");
   }
 
   return parseAIResponse(text);
 }
 
+// ── OpenAI API ─────────────────────────────────────────────────────────────────
 async function callOpenAI(apiKey, prompt) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -211,15 +235,20 @@ async function callOpenAI(apiKey, prompt) {
   return parseAIResponse(text);
 }
 
+// ─── Response Parser ───────────────────────────────────────────────────────────
 function parseAIResponse(text) {
   try {
+    // Gemini 2.5 includes thinking tokens before the actual response.
+    // We extract the JSON object by finding the first { and last } in the text.
     let jsonStr = null;
 
+    // Strategy 1: strip markdown fences then parse
     const stripped = text.replace(/```json\n?|```\n?/g, "").trim();
     if (stripped.startsWith("{")) {
       jsonStr = stripped;
     }
 
+    // Strategy 2: find the first { ... } block in the full text (handles thinking prefix)
     if (!jsonStr) {
       const firstBrace = text.indexOf("{");
       const lastBrace  = text.lastIndexOf("}");
@@ -232,6 +261,7 @@ function parseAIResponse(text) {
 
     const parsed = JSON.parse(jsonStr);
 
+    // Flexible validation — Gemini sometimes uses different key names
     const summary = parsed.summary || parsed.Summary || parsed.bullets || [];
     const keyInsights = parsed.keyInsights || parsed.key_insights || parsed.insights || parsed.KeyInsights || [];
     const readingTime = parsed.readingTime || parsed.reading_time || parsed.readTime || "~3 min read";
@@ -267,6 +297,7 @@ function sanitize(str) {
     .replace(/'/g, "&#x27;");
 }
 
+// ─── Cache Helpers ─────────────────────────────────────────────────────────────
 async function getCachedSummary(url) {
   const cacheKey = `cache_${btoa(unescape(encodeURIComponent(url))).slice(0, 50)}`;
   const result = await chrome.storage.local.get(cacheKey);
@@ -302,6 +333,7 @@ async function clearCache(url, sendResponse) {
   }
 }
 
+// ─── Settings Helpers ──────────────────────────────────────────────────────────
 async function getSettings(sendResponse) {
   try {
     const data = await getStorageValues(["apiKey", "apiProvider", "theme"]);
@@ -331,6 +363,7 @@ async function saveSettings(payload, sendResponse) {
   }
 }
 
+// ─── Storage Utility ───────────────────────────────────────────────────────────
 function getStorageValues(keys) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(keys, result => {
