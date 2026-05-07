@@ -6,11 +6,10 @@
 
 ## Demo Video
 
-🎥 **[Watch Demo on YouTube / Loom](https://drive.google.com/file/d/1MxOliNUQQ9j7DPEwymiUs4iblZldudl-/view?usp=sharing)**
+🎥 **[Watch Demo](https://drive.google.com/file/d/1Tkr9JqbOzg6aIBtC-mzeUn60-g9-vX_n/view?usp=sharing)**
 
-> The demo video (2–5 minutes) covers:
+> The demo video (2:11 minutes) covers:
 > - Loading the extension in Chrome via Developer Mode
-> - Adding a Gemini API key in Settings
 > - Summarizing a live article page
 > - Showing bullet summary, key insights, reading time, and word count
 > - Demonstrating dark/light mode toggle
@@ -48,7 +47,7 @@
 Clone or download this repository:
 
 ```bash
-git clone https://github.com/Bigoluwagentle/aipagesummarizer.git
+git clone https://github.com/bigoluwagentle/pagesummarizer.git
 ```
 
 Or download the ZIP and unzip it.
@@ -68,12 +67,6 @@ Or download the ZIP and unzip it.
 ---
 
 ### Step 3 — Add Your API Key
-
-1. Click the **SummAI** icon in the Chrome toolbar
-2. Click the **⚙️ Settings** (gear) icon in the top-right of the popup
-3. Choose your **AI Provider** (Gemini recommended — it has a free tier)
-4. Paste your **API key** into the field
-5. Click **Save Settings**
 
 Your API key is stored **locally on your device** using `chrome.storage.local`. It is never sent anywhere except directly to the AI provider's official API endpoint.
 
@@ -246,8 +239,7 @@ To make changes:
 
 ## License
 
-MIT — built for HNGi14 Stage 4A Frontend track.
-
 ---
 
+https://github.com/Bigoluwagentle/aipagesummarizer.git
 
