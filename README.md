@@ -199,7 +199,7 @@ Page content is truncated to ~2,500 characters before sending to stay well withi
 
 ## Trade-offs
 
-| Decision | Trade-off |
+| Decision | Trade-off 
 |---|---|
 | **Background-only API calls** | More secure but adds a round-trip message hop vs. calling from popup directly |
 | **Content truncation at 2,500 chars** | Keeps API costs low and avoids free-tier token limits. Sufficient for article summaries. |
